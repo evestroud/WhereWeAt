@@ -4,6 +4,12 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
+const connection = new WebSocket('ws://localhost:8080')
+
+connection.addEventListener('message', (message) => {
+  console.log(`Received: ${message.data}`)
+})
+
 function App() {
   const [count, setCount] = useState(0)
 
@@ -27,6 +33,15 @@ function App() {
           onClick={() => setCount((count) => count + 1)}
         >
           Count is {count}
+        </button>
+        <button
+          type="button"
+          className="counter"
+          onClick={() => {
+            connection.send('hello')
+          }}
+        >
+          WebSocket test
         </button>
       </section>
 
