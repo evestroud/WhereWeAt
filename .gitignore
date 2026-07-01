@@ -1,2 +1,4 @@
 node_modules
 .zed
+dist
+CLAUDE.md
