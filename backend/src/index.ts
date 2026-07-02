@@ -1,9 +1,23 @@
 import { WebSocketServer } from 'ws'
+import express from 'express'
+import { nanoid } from 'nanoid'
 
-const server = new WebSocketServer({ port: 8080 })
+const httpServer = express()
+
+httpServer.get('/create', (req, res) => {
+  let id = nanoid(6)
+  console.log(`id generated: ${id}`)
+  res.send(id)
+})
+
+httpServer.listen(8080, () => {
+  console.log('HTTP server listening on 8080')
+})
+
+const wsServer = new WebSocketServer({ port: 8081 })
 let nextId = 0
 
-server.on('connection', (ws) => {
+wsServer.on('connection', (ws) => {
   const clientId = nextId
   nextId += 1
 
@@ -20,4 +34,4 @@ server.on('connection', (ws) => {
   })
 })
 
-console.log('WebSocket server running on ws://localhost:8080')
+console.log('WebSocket server running on ws://localhost:8081')
