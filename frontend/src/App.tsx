@@ -1,17 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState, type MouseEventHandler } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
-const connection = new WebSocket('ws://localhost:8080')
-
-connection.addEventListener('message', (message) => {
-  console.log(`Received: ${message.data}`)
-})
-
 function App() {
   const [count, setCount] = useState(0)
+  const connection = useRef<null | WebSocket>(null)
+
+  useEffect(() => {
+    const socket = new WebSocket('ws://localhost:8080')
+    socket.addEventListener('open', () => {
+      console.log('Connection opened!')
+    })
+    socket.addEventListener('message', (message) => {
+      console.log(`Received: ${message.data}`)
+    })
+
+    connection.current = socket
+    return () => {
+      socket.close()
+    }
+  }, [])
 
   return (
     <>
@@ -37,9 +47,7 @@ function App() {
         <button
           type="button"
           className="counter"
-          onClick={() => {
-            connection.send('hello')
-          }}
+          onClick={() => connection.current?.send(count.toString())}
         >
           WebSocket test
         </button>
