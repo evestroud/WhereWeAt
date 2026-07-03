@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
@@ -12,7 +19,6 @@ async function getId() {
 }
 
 function App() {
-  const [count, setCount] = useState(0)
   const [id, setId] = useState<String | null>(null)
   const wsConnection = useRef<null | WebSocket>(null)
 
@@ -22,7 +28,7 @@ function App() {
       console.log('Connection opened!')
     })
     socket.addEventListener('message', (message) => {
-      console.log(`Received: ${message.data}`)
+      console.log(message.data)
     })
 
     wsConnection.current = socket
@@ -45,29 +51,17 @@ function App() {
             Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-        <button
-          type="button"
-          className="counter"
-          onClick={async () => {
-            setId((await getId()) || null)
-          }}
-        >
-          ID is {id}
-        </button>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => wsConnection.current?.send(count.toString())}
-        >
-          WebSocket test
-        </button>
+        {id ? (
+          <>
+            Current ID is {id}
+            <ClearButton setId={setId} />
+            <WebSocketButton wsConnection={wsConnection} id={id} />
+          </>
+        ) : (
+          <>
+            <CreateButton setId={setId} />
+          </>
+        )}
       </section>
 
       <div className="ticks"></div>
@@ -75,6 +69,60 @@ function App() {
       <div className="ticks"></div>
       <section id="spacer"></section>
     </>
+  )
+}
+
+function WebSocketButton({
+  wsConnection,
+  id,
+}: {
+  wsConnection: RefObject<WebSocket | null>
+  id: String | null
+}) {
+  return (
+    <button
+      type="button"
+      className="counter"
+      onClick={() => wsConnection.current?.send(`ID: ${id}\n`)}
+    >
+      WebSocket test
+    </button>
+  )
+}
+
+function CreateButton({
+  setId,
+}: {
+  setId: Dispatch<SetStateAction<String | null>>
+}) {
+  return (
+    <button
+      type="button"
+      className="counter"
+      onClick={async () => {
+        setId((await getId()) || null)
+      }}
+    >
+      Get new ID
+    </button>
+  )
+}
+
+function ClearButton({
+  setId,
+}: {
+  setId: Dispatch<SetStateAction<String | null>>
+}) {
+  return (
+    <button
+      type="button"
+      className="counter"
+      onClick={async () => {
+        setId(null)
+      }}
+    >
+      Clear ID
+    </button>
   )
 }
 
