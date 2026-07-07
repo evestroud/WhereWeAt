@@ -40,7 +40,7 @@ httpServer.post('/create', (_req, res) => {
   const id = nanoid(6)
   const instance: Instance = { id, lastUsed: Date.now() }
   instanceMap.set(id, instance)
-  console.log(`instance ${id} generated`)
+  console.log(`Instance ${id} generated`)
   res.send(id)
 })
 
@@ -72,7 +72,7 @@ wsServer.on('connection', (ws, req) => {
     ws.send(`Server: Received message ${message} for ${id}`)
   })
 
-  ws.on('close)', () => {
+  ws.on('close', () => {
     console.log(`Client ${clientId} disconnected.`)
   })
 })

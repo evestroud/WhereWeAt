@@ -43,6 +43,7 @@ function Instance() {
     socket.addEventListener('open', () => {
       console.log(`Connection opened to instance ${id}!`)
     })
+    // TODO onopen: generate/retrieve client ID and sync with server
     socket.addEventListener('message', (message) => {
       console.log(message.data)
     })
@@ -55,23 +56,19 @@ function Instance() {
 
   return <>
     Current ID is {id}
-    <WebSocketButton wsConnection={wsConnection} id={id} />
+    <WebSocketButton wsConnection={wsConnection} />
     <ClearButton />
   </>
 }
 
-function WebSocketButton({
-  wsConnection,
-  id,
-}: {
+function WebSocketButton({ wsConnection }: {
   wsConnection: RefObject<WebSocket | null>
-  id: String | null
 }) {
   return (
     <button
       type="button"
       className="counter"
-      onClick={() => wsConnection.current?.send(`ID: ${id}\n`)}
+      onClick={() => wsConnection.current?.send(JSON.stringify({ todo: "client ID" }))}
     >
       WebSocket test
     </button>
