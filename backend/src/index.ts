@@ -3,15 +3,28 @@ import express from 'express'
 import { nanoid } from 'nanoid'
 
 interface Instance {
-  id: string
+  id: string,
+  lastUsed: number // ms since Unix epoch: Date.now()
 }
 
-const httpServer = express()
 const instanceMap = new Map<string, Instance>()
+const MAX_AGE_MS = process.env.ENV == "dev" ? 30000 : 300000
+const RECLAIM_TIMER_MS = process.env.ENV == "dev" ? 6000 : 60000
+setInterval(() => {
+  for (const [id, instance] of instanceMap) {
+    console.log(`Checking instance ${id} for reclaim: ${Date.now() - instance.lastUsed}ms`)
+    if (Date.now() - instance.lastUsed > MAX_AGE_MS) {
+      console.log(`> Deleting instance.`)
+      instanceMap.delete(id)
+    }
+  }
+}, RECLAIM_TIMER_MS)
 
+
+const httpServer = express()
 httpServer.post('/create', (_req, res) => {
   const id = nanoid(6)
-  const instance: Instance = { id }
+  const instance: Instance = { id, lastUsed: Date.now() }
   instanceMap.set(id, instance)
   console.log(`instance ${id} generated`)
   res.send(id)
@@ -20,6 +33,7 @@ httpServer.post('/create', (_req, res) => {
 httpServer.listen(8080, () => {
   console.log('HTTP server listening on 8080')
 })
+
 
 const wsServer = new WebSocketServer({ port: 8081 })
 let nextId = 0
