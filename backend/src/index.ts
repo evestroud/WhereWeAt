@@ -2,11 +2,15 @@ import { WebSocketServer } from 'ws'
 import express from 'express'
 import { nanoid } from 'nanoid'
 
+
+/* Types */
 interface Instance {
   id: string,
   lastUsed: number // ms since Unix epoch: Date.now()
 }
 
+
+/* Instance management */
 const instanceMap = new Map<string, Instance>()
 const MAX_AGE_MS = process.env.ENV == "dev" ? 30000 : 300000
 const RECLAIM_TIMER_MS = process.env.ENV == "dev" ? 6000 : 60000
@@ -21,6 +25,7 @@ setInterval(() => {
 }, RECLAIM_TIMER_MS)
 
 
+/* HTTP server */
 const httpServer = express()
 httpServer.post('/create', (_req, res) => {
   const id = nanoid(6)
@@ -30,6 +35,8 @@ httpServer.post('/create', (_req, res) => {
   res.send(id)
 })
 
+
+/* Websocket server */
 httpServer.listen(8080, () => {
   console.log('HTTP server listening on 8080')
 })
@@ -39,6 +46,8 @@ const wsServer = new WebSocketServer({ port: 8081 })
 let nextId = 0
 
 wsServer.on('connection', (ws) => {
+  // TODO manage client lifecycle
+  // TODO client list, status
   const clientId = nextId
   nextId += 1
 
