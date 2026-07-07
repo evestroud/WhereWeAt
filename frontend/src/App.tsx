@@ -39,9 +39,9 @@ function Instance() {
   const wsConnection = useRef<null | WebSocket>(null)
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8081')
+    const socket = new WebSocket(`ws://localhost:8081/${id}`)
     socket.addEventListener('open', () => {
-      console.log('Connection opened!')
+      console.log(`Connection opened to instance ${id}!`)
     })
     socket.addEventListener('message', (message) => {
       console.log(message.data)

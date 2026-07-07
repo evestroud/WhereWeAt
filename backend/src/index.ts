@@ -41,22 +41,21 @@ httpServer.listen(8080, () => {
   console.log('HTTP server listening on 8080')
 })
 
-
 const wsServer = new WebSocketServer({ port: 8081 })
 let nextId = 0
 
-wsServer.on('connection', (ws) => {
-  // TODO manage client lifecycle
-  // TODO client list, status
-  const clientId = nextId
-  nextId += 1
+wsServer.on('connection', (ws, req) => {
+  // TODO generate client id and store in frontend
+  const clientId = nextId++
+  const instanceId = req.url?.slice(1)
+  console.log(`Client ${clientId} connected to instance ${instanceId}!`)
 
-  console.log(`Client ${clientId} connected!`)
 
   ws.on('message', (message) => {
     console.log(`Received ${message}`)
 
-    ws.send(`Received ${message}`)
+    const id = req.url?.slice(1)
+    ws.send(`Server: Received message ${message} for ${id}`)
   })
 
   ws.on('close)', () => {
