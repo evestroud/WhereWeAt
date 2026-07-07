@@ -2,24 +2,40 @@ import {
   useEffect,
   useRef,
   useState,
-  type Dispatch,
   type RefObject,
-  type SetStateAction,
 } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
+import { BrowserRouter, Route, Routes, useNavigate, useParams } from 'react-router'
 
 async function getId() {
   const response = await fetch('/create', { method: 'POST' })
   if (response.ok) {
-    return await response.text()
+    const id = await response.text()
+    console.log(`getId() -> ${id}`)
+    return id
   }
 }
 
 function App() {
-  const [id, setId] = useState<String | null>(null)
+  return (
+    <section id="center">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<CreateButton />} />
+          <Route path="/:id" element={<Instance />} />
+        </Routes>
+      </BrowserRouter>
+    </section>
+  )
+}
+
+function Instance() {
+  const { id } = useParams<{ id: string }>()
+
+  if (!id) {
+    return <div>Error: Missing user ID.</div>;
+  }
+
   const wsConnection = useRef<null | WebSocket>(null)
 
   useEffect(() => {
@@ -37,39 +53,11 @@ function App() {
     }
   }, [])
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        {id ? (
-          <>
-            Current ID is {id}
-            <ClearButton setId={setId} />
-            <WebSocketButton wsConnection={wsConnection} id={id} />
-          </>
-        ) : (
-          <>
-            <CreateButton setId={setId} />
-          </>
-        )}
-      </section>
-
-      <div className="ticks"></div>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  return <>
+    Current ID is {id}
+    <WebSocketButton wsConnection={wsConnection} id={id} />
+    <ClearButton />
+  </>
 }
 
 function WebSocketButton({
@@ -90,36 +78,41 @@ function WebSocketButton({
   )
 }
 
-function CreateButton({
-  setId,
-}: {
-  setId: Dispatch<SetStateAction<String | null>>
-}) {
+function CreateButton() {
+  const [id, setId] = useState<string | null>(null)
+  const navigate = useNavigate()
+
   return (
-    <button
-      type="button"
-      className="counter"
-      onClick={async () => {
-        setId((await getId()) || null)
-      }}
-    >
-      Get new ID
-    </button>
+    <>
+      {id ?
+        <button
+          type="button"
+          className='counter'
+          onClick={() => {
+            navigate(`/${id}`)
+          }}>Go to {id}</button>
+        :
+        <button
+          type="button"
+          className="counter"
+          onClick={async () => {
+            setId((await getId()) || null)
+          }}
+        >
+          Get new ID
+        </button>
+      }
+    </>
   )
 }
 
-function ClearButton({
-  setId,
-}: {
-  setId: Dispatch<SetStateAction<String | null>>
-}) {
+function ClearButton() {
+  const navigate = useNavigate()
   return (
     <button
       type="button"
       className="counter"
-      onClick={async () => {
-        setId(null)
-      }}
+      onClick={async () => { navigate("/") }}
     >
       Clear ID
     </button>
