@@ -12,6 +12,15 @@ interface Instance {
 
 /* Instance management */
 const instanceMap = new Map<string, Instance>()
+
+function touchInstance(id: string) {
+  const instance = instanceMap.get(id)
+  if (instance) {
+    instance.lastUsed = Date.now()
+    console.log(`Instance ${id} updated`)
+  }
+}
+
 const MAX_AGE_MS = process.env.ENV == "dev" ? 30000 : 300000
 const RECLAIM_TIMER_MS = process.env.ENV == "dev" ? 6000 : 60000
 setInterval(() => {
@@ -50,11 +59,16 @@ wsServer.on('connection', (ws, req) => {
   const instanceId = req.url?.slice(1)
   console.log(`Client ${clientId} connected to instance ${instanceId}!`)
 
+  if (instanceId) touchInstance(instanceId)
+
+  // TODO: ping-pong (connection alive check)
 
   ws.on('message', (message) => {
     console.log(`Received ${message}`)
 
     const id = req.url?.slice(1)
+    if (id) touchInstance(id)
+
     ws.send(`Server: Received message ${message} for ${id}`)
   })
 
