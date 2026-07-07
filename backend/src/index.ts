@@ -2,11 +2,18 @@ import { WebSocketServer } from 'ws'
 import express from 'express'
 import { nanoid } from 'nanoid'
 
-const httpServer = express()
+interface Instance {
+  id: string
+}
 
-httpServer.get('/create', (req, res) => {
-  let id = nanoid(6)
-  console.log(`id generated: ${id}`)
+const httpServer = express()
+const instanceMap = new Map<string, Instance>()
+
+httpServer.post('/create', (_req, res) => {
+  const id = nanoid(6)
+  const instance: Instance = { id }
+  instanceMap.set(id, instance)
+  console.log(`instance ${id} generated`)
   res.send(id)
 })
 

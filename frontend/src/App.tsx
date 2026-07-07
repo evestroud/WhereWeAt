@@ -12,7 +12,7 @@ import heroImg from './assets/hero.png'
 import './App.css'
 
 async function getId() {
-  let response = await fetch('/create')
+  const response = await fetch('/create', { method: 'POST' })
   if (response.ok) {
     return await response.text()
   }
