@@ -27,7 +27,7 @@ const RECLAIM_TIMER_MS = process.env.ENV == "dev" ? 6000 : 60000
 setInterval(() => {
   for (const [id, instance] of instanceMap) {
     console.log(`Checking instance ${id} for reclaim: ${Date.now() - instance.lastUsed}ms`)
-    if (Date.now() - instance.lastUsed > MAX_AGE_MS) {
+    if (Date.now() - instance.lastUsed > MAX_AGE_MS && instance.connections.size == 0) {
       console.log(`> Deleting instance.`)
       instanceMap.delete(id)
     }
@@ -61,6 +61,7 @@ wsServer.on('connection', (ws, req) => {
   console.log(`Handshake initiated for instance ${instanceId}`)
 
   // TODO: ping-pong (connection alive check)
+  // - remove clients after ping pong timeout (length?)
 
   if (instanceId) {
     // TODO 404 if instance not in instanceMap
@@ -74,7 +75,7 @@ wsServer.on('connection', (ws, req) => {
       // TODO message types, switch
 
       // TODO only run on INIT message type
-      if (clientId) {
+      if (clientId != undefined) {
         // TODO what happens if two clients connect with the same ID?
         console.log(`Instance ${instanceId}: Recognized client ${clientId}`)
         instance?.connections.add(clientId)
