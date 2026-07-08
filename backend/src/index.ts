@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 interface Instance {
   id: string,
   lastUsed: number // ms since Unix epoch: Date.now()
+  connections: Set<number>
 }
 
 
@@ -38,7 +39,7 @@ setInterval(() => {
 const httpServer = express()
 httpServer.post('/create', (_req, res) => {
   const id = nanoid(6)
-  const instance: Instance = { id, lastUsed: Date.now() }
+  const instance: Instance = { id, lastUsed: Date.now(), connections: new Set() }
   instanceMap.set(id, instance)
   console.log(`Instance ${id} generated`)
   res.send(id)
@@ -54,27 +55,49 @@ const wsServer = new WebSocketServer({ port: 8081 })
 let nextId = 0
 
 wsServer.on('connection', (ws, req) => {
-  // TODO generate client id and store in frontend
-  const clientId = nextId++
   const instanceId = req.url?.slice(1)
-  console.log(`Client ${clientId} connected to instance ${instanceId}!`)
+  let clientId: number | undefined
 
-  if (instanceId) touchInstance(instanceId)
+  console.log(`Handshake initiated for instance ${instanceId}`)
 
   // TODO: ping-pong (connection alive check)
 
-  ws.on('message', (message) => {
-    console.log(`Received ${message}`)
+  if (instanceId) {
+    // TODO 404 if instance not in instanceMap
+    const instance = instanceMap.get(instanceId)
+    touchInstance(instanceId)
 
-    const id = req.url?.slice(1)
-    if (id) touchInstance(id)
+    ws.on('message', (message) => {
+      console.log(`Received ${message}`)
+      const messageJson = JSON.parse(message.toString())
+      clientId = messageJson.clientId
+      // TODO message types, switch
 
-    ws.send(`Server: Received message ${message} for ${id}`)
-  })
+      // TODO only run on INIT message type
+      if (clientId) {
+        // TODO what happens if two clients connect with the same ID?
+        console.log(`Instance ${instanceId}: Recognized client ${clientId}`)
+        instance?.connections.add(clientId)
+        ws.send(JSON.stringify({ clientId, message: "Client ID accepted" }))
+      } else {
+        clientId = nextId++
+        console.log(`Instance ${instanceId}: New client ${clientId}`)
+        instance?.connections.add(clientId)
+        ws.send(JSON.stringify({ clientId, message: "Client ID generated" }))
+      }
 
-  ws.on('close', () => {
-    console.log(`Client ${clientId} disconnected.`)
-  })
+      touchInstance(instanceId)
+      console.log(instance)
+    })
+
+    ws.on('close', () => {
+      console.log(`Client ${clientId} disconnected.`)
+      if (clientId) instance?.connections.delete(clientId)
+    })
+
+  } else {
+    // TODO error if no instance ID
+  }
 })
 
 console.log('WebSocket server running on ws://localhost:8081')

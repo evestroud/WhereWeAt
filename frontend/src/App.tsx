@@ -2,83 +2,82 @@ import {
   useEffect,
   useRef,
   useState,
+  type Dispatch,
   type RefObject,
+  type SetStateAction,
 } from 'react'
 import './App.css'
 import { BrowserRouter, Route, Routes, useNavigate, useParams } from 'react-router'
 
-async function getId() {
-  const response = await fetch('/create', { method: 'POST' })
-  if (response.ok) {
-    const id = await response.text()
-    console.log(`getId() -> ${id}`)
-    return id
-  }
-}
+
 
 function App() {
+  // TODO this should be stored in a cookie
+  // TODO this should be Context not State
+  const [clientId, setClientId] = useState<string>()
   return (
     <section id="center">
+      <p>Current client ID is {clientId}</p>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CreateButton />} />
-          <Route path="/:id" element={<Instance />} />
+          <Route path="/:instanceId" element={<Instance clientId={clientId} setClientId={setClientId} />} />
         </Routes>
       </BrowserRouter>
     </section>
   )
 }
 
-function Instance() {
-  const { id } = useParams<{ id: string }>()
+function Instance({ clientId, setClientId }: {
+  clientId: string | undefined,
+  setClientId: Dispatch<SetStateAction<string | undefined>>
+}) {
+  // TODO this should be Context not State
+  const { instanceId } = useParams<{ instanceId: string }>()
 
-  if (!id) {
-    return <div>Error: Missing user ID.</div>;
+  if (!instanceId) {
+    return <div>Error: Missing instance ID.</div>;
   }
 
   const wsConnection = useRef<null | WebSocket>(null)
 
   useEffect(() => {
-    const socket = new WebSocket(`ws://localhost:8081/${id}`)
+    const socket = new WebSocket(`ws://localhost:8081/${instanceId}`)
     socket.addEventListener('open', () => {
-      console.log(`Connection opened to instance ${id}!`)
+      console.log(`Connection opened to instance ${instanceId}! Sending clientId: ${clientId}`)
+      wsConnection.current?.send(JSON.stringify({ clientId }))
     })
-    // TODO onopen: generate/retrieve client ID and sync with server
     socket.addEventListener('message', (message) => {
-      console.log(message.data)
+      console.log("Received " + message.data + " from server.")
+      setClientId(JSON.parse(message.data).clientId)
     })
 
     wsConnection.current = socket
     return () => {
+      console.log(`Closing connection to ${instanceId}`)
       socket.close()
     }
   }, [])
 
   return <>
-    Current ID is {id}
-    <WebSocketButton wsConnection={wsConnection} />
-    <ClearButton />
+    <p>Current instance ID is {instanceId}</p>
+    <WebSocketButton wsConnection={wsConnection} clientId={clientId} instanceId={instanceId} />
+    <ClearButton wsConnection={wsConnection} />
   </>
 }
 
-function WebSocketButton({ wsConnection }: {
-  wsConnection: RefObject<WebSocket | null>
-}) {
-  return (
-    <button
-      type="button"
-      className="counter"
-      onClick={() => wsConnection.current?.send(JSON.stringify({ todo: "client ID" }))}
-    >
-      WebSocket test
-    </button>
-  )
-}
-
 function CreateButton() {
+  async function getId() {
+    const response = await fetch('/create', { method: 'POST' })
+    if (response.ok) {
+      const id = await response.text()
+      console.log(`getId() -> ${id}`)
+      return id
+    }
+  }
+  // TODO should this automatically navigate to the instance?
   const [id, setId] = useState<string | null>(null)
   const navigate = useNavigate()
-
   return (
     <>
       {id ?
@@ -87,7 +86,7 @@ function CreateButton() {
           className='counter'
           onClick={() => {
             navigate(`/${id}`)
-          }}>Go to {id}</button>
+          }}>Go to instance {id}</button>
         :
         <button
           type="button"
@@ -96,20 +95,45 @@ function CreateButton() {
             setId((await getId()) || null)
           }}
         >
-          Get new ID
+          Get new instance ID
         </button>
       }
     </>
   )
 }
 
-function ClearButton() {
+function WebSocketButton({ wsConnection, clientId, instanceId }: {
+  wsConnection: RefObject<WebSocket | null>,
+  clientId: string | undefined,
+  instanceId: string | undefined
+}) {
+  return (
+    <button
+      type="button"
+      className="counter"
+      onClick={() => {
+        const wsMessage = JSON.stringify({ clientId, message: "test" })
+        wsConnection.current?.send(wsMessage)
+        console.log(`Sending ${wsMessage} to instance ${instanceId}`)
+      }}
+    >
+      WebSocket test
+    </button>
+  )
+}
+
+function ClearButton({ wsConnection }: {
+  wsConnection: RefObject<WebSocket | null>
+}) {
   const navigate = useNavigate()
   return (
     <button
       type="button"
       className="counter"
-      onClick={async () => { navigate("/") }}
+      onClick={async () => {
+        wsConnection.current?.close()
+        navigate("/")
+      }}
     >
       Clear ID
     </button>
