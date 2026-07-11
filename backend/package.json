@@ -12,6 +12,7 @@
   "dependencies": {
     "express": "^5.2.1",
     "nanoid": "^5.1.16",
+    "shared": "workspace:*",
     "ws": "^8.21.0"
   },
   "devDependencies": {

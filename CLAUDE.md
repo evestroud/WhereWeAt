@@ -32,7 +32,7 @@ on. Follow these guidelines in all sessions:
 - Monorepo, Yarn workspaces (Yarn Berry, `node-modules` linker — NOT PnP)
 - `frontend/` — Vite + React + TypeScript client
 - `backend/` — custom Node.js WebSocket server (no database, no BaaS)
-- `packages/shared/` — (forthcoming) shared TypeScript types for WebSocket
+- `shared/` — (forthcoming) shared TypeScript types for WebSocket
   message schemas, imported by both frontend and backend
 
 ## Core product model

@@ -6,7 +6,8 @@
   "packageManager": "yarn@4.14.1",
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "shared"
   ],
   "scripts": {
     "dev": "yarn workspaces foreach -Api run dev",
