@@ -7,9 +7,13 @@ import {
   type SetStateAction,
 } from 'react'
 import './App.css'
-import { BrowserRouter, Route, Routes, useNavigate, useParams } from 'react-router'
-
-
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+} from 'react-router'
 
 function App() {
   // TODO this should be stored in a cookie
@@ -21,22 +25,28 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CreateButton />} />
-          <Route path="/:instanceId" element={<Instance clientId={clientId} setClientId={setClientId} />} />
+          <Route
+            path="/:instanceId"
+            element={<Instance clientId={clientId} setClientId={setClientId} />}
+          />
         </Routes>
       </BrowserRouter>
     </section>
   )
 }
 
-function Instance({ clientId, setClientId }: {
-  clientId: string | undefined,
+function Instance({
+  clientId,
+  setClientId,
+}: {
+  clientId: string | undefined
   setClientId: Dispatch<SetStateAction<string | undefined>>
 }) {
   // TODO this should be Context not State
   const { instanceId } = useParams<{ instanceId: string }>()
 
   if (!instanceId) {
-    return <div>Error: Missing instance ID.</div>;
+    return <div>Error: Missing instance ID.</div>
   }
 
   const wsConnection = useRef<null | WebSocket>(null)
@@ -44,11 +54,13 @@ function Instance({ clientId, setClientId }: {
   useEffect(() => {
     const socket = new WebSocket(`ws://localhost:8081/${instanceId}`)
     socket.addEventListener('open', () => {
-      console.log(`Connection opened to instance ${instanceId}! Sending clientId: ${clientId}`)
+      console.log(
+        `Connection opened to instance ${instanceId}! Sending clientId: ${clientId}`,
+      )
       wsConnection.current?.send(JSON.stringify({ clientId }))
     })
     socket.addEventListener('message', (message) => {
-      console.log("Received " + message.data + " from server.")
+      console.log('Received ' + message.data + ' from server.')
       setClientId(JSON.parse(message.data).clientId)
     })
 
@@ -59,11 +71,17 @@ function Instance({ clientId, setClientId }: {
     }
   }, [])
 
-  return <>
-    <p>Current instance ID is {instanceId}</p>
-    <WebSocketButton wsConnection={wsConnection} clientId={clientId} instanceId={instanceId} />
-    <ClearButton wsConnection={wsConnection} />
-  </>
+  return (
+    <>
+      <p>Current instance ID is {instanceId}</p>
+      <WebSocketButton
+        wsConnection={wsConnection}
+        clientId={clientId}
+        instanceId={instanceId}
+      />
+      <ClearButton wsConnection={wsConnection} />
+    </>
+  )
 }
 
 function CreateButton() {
@@ -80,14 +98,17 @@ function CreateButton() {
   const navigate = useNavigate()
   return (
     <>
-      {id ?
+      {id ? (
         <button
           type="button"
-          className='counter'
+          className="counter"
           onClick={() => {
             navigate(`/${id}`)
-          }}>Go to instance {id}</button>
-        :
+          }}
+        >
+          Go to instance {id}
+        </button>
+      ) : (
         <button
           type="button"
           className="counter"
@@ -97,14 +118,18 @@ function CreateButton() {
         >
           Get new instance ID
         </button>
-      }
+      )}
     </>
   )
 }
 
-function WebSocketButton({ wsConnection, clientId, instanceId }: {
-  wsConnection: RefObject<WebSocket | null>,
-  clientId: string | undefined,
+function WebSocketButton({
+  wsConnection,
+  clientId,
+  instanceId,
+}: {
+  wsConnection: RefObject<WebSocket | null>
+  clientId: string | undefined
   instanceId: string | undefined
 }) {
   return (
@@ -112,7 +137,7 @@ function WebSocketButton({ wsConnection, clientId, instanceId }: {
       type="button"
       className="counter"
       onClick={() => {
-        const wsMessage = JSON.stringify({ clientId, message: "test" })
+        const wsMessage = JSON.stringify({ clientId, message: 'test' })
         wsConnection.current?.send(wsMessage)
         console.log(`Sending ${wsMessage} to instance ${instanceId}`)
       }}
@@ -122,7 +147,9 @@ function WebSocketButton({ wsConnection, clientId, instanceId }: {
   )
 }
 
-function ClearButton({ wsConnection }: {
+function ClearButton({
+  wsConnection,
+}: {
   wsConnection: RefObject<WebSocket | null>
 }) {
   const navigate = useNavigate()
@@ -132,7 +159,7 @@ function ClearButton({ wsConnection }: {
       className="counter"
       onClick={async () => {
         wsConnection.current?.close()
-        navigate("/")
+        navigate('/')
       }}
     >
       Clear ID

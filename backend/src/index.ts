@@ -2,14 +2,12 @@ import { WebSocketServer } from 'ws'
 import express from 'express'
 import { nanoid } from 'nanoid'
 
-
 /* Types */
 interface Instance {
-  id: string,
+  id: string
   lastUsed: number // ms since Unix epoch: Date.now()
   connections: Set<number>
 }
-
 
 /* Instance management */
 const instanceMap = new Map<string, Instance>()
@@ -22,29 +20,36 @@ function touchInstance(id: string) {
   }
 }
 
-const MAX_AGE_MS = process.env.ENV == "dev" ? 30000 : 300000
-const RECLAIM_TIMER_MS = process.env.ENV == "dev" ? 6000 : 60000
+const MAX_AGE_MS = process.env.ENV == 'dev' ? 30000 : 300000
+const RECLAIM_TIMER_MS = process.env.ENV == 'dev' ? 6000 : 60000
 setInterval(() => {
   for (const [id, instance] of instanceMap) {
-    console.log(`Checking instance ${id} for reclaim: ${Date.now() - instance.lastUsed}ms`)
-    if (Date.now() - instance.lastUsed > MAX_AGE_MS && instance.connections.size == 0) {
+    console.log(
+      `Checking instance ${id} for reclaim: ${Date.now() - instance.lastUsed}ms`,
+    )
+    if (
+      Date.now() - instance.lastUsed > MAX_AGE_MS &&
+      instance.connections.size == 0
+    ) {
       console.log(`> Deleting instance.`)
       instanceMap.delete(id)
     }
   }
 }, RECLAIM_TIMER_MS)
 
-
 /* HTTP server */
 const httpServer = express()
 httpServer.post('/create', (_req, res) => {
   const id = nanoid(6)
-  const instance: Instance = { id, lastUsed: Date.now(), connections: new Set() }
+  const instance: Instance = {
+    id,
+    lastUsed: Date.now(),
+    connections: new Set(),
+  }
   instanceMap.set(id, instance)
   console.log(`Instance ${id} generated`)
   res.send(id)
 })
-
 
 /* Websocket server */
 httpServer.listen(8080, () => {
@@ -79,12 +84,12 @@ wsServer.on('connection', (ws, req) => {
         // TODO what happens if two clients connect with the same ID?
         console.log(`Instance ${instanceId}: Recognized client ${clientId}`)
         instance?.connections.add(clientId)
-        ws.send(JSON.stringify({ clientId, message: "Client ID accepted" }))
+        ws.send(JSON.stringify({ clientId, message: 'Client ID accepted' }))
       } else {
         clientId = nextId++
         console.log(`Instance ${instanceId}: New client ${clientId}`)
         instance?.connections.add(clientId)
-        ws.send(JSON.stringify({ clientId, message: "Client ID generated" }))
+        ws.send(JSON.stringify({ clientId, message: 'Client ID generated' }))
       }
 
       touchInstance(instanceId)
@@ -95,7 +100,6 @@ wsServer.on('connection', (ws, req) => {
       console.log(`Client ${clientId} disconnected.`)
       if (clientId) instance?.connections.delete(clientId)
     })
-
   } else {
     // TODO error if no instance ID
   }
