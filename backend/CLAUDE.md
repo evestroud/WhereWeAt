@@ -4,7 +4,7 @@
 - Node.js, custom WebSocket server
 - No database, no BaaS — all state is in-memory, nothing persists past
   process restart by design
-- Message types imported from `packages/shared` — source of truth for the
+- Message types imported from `shared` — source of truth for the
   WS protocol
 
 ## Instance lifecycle
@@ -38,4 +38,4 @@
 ## Conventions
 - Keep connection-state logic and message-handling logic separable — message
   handlers should be testable without standing up real sockets.
-- Any message shape change goes in `packages/shared` first.
+- Any message shape change goes in `shared` first.
